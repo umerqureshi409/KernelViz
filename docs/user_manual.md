@@ -65,7 +65,7 @@ The header connection dot will turn **green** and show **LIVE** within 1–2 sec
 |---------|-------------|
 | `KERNELVIZ` title | Glowing logo — always visible |
 | `● LIVE MODE` badge | Green = connected to server; shows `RECONNECTING` if disconnected |
-| `24CS005` badge | Your roll number — always displayed |
+| `24CS005` badge | roll number — always displayed |
 | TICK counter | Simulation clock — increments every second |
 | CPU / MEM / PROCS pills | At-a-glance system summary |
 | Clock | Live local time |
