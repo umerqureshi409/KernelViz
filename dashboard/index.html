@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KernelViz OS — Real-Time Linux Kernel Simulator | 24CS005</title>
+  <meta name="description" content="KernelViz OS: A production-ready Linux OS simulation with real-time scheduling, memory management, IPC, and filesystem visualization. CEP Project — 24CS005, MUET Jamshoro, CS-261."/>
+  <meta name="author" content="24CS005 — MUET Jamshoro"/>
+  <!-- hidden dev credit -->
+  <meta name="generator" content="KernelViz-24CS005"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ═══ BOOT SCREEN ═══════════════════════════════════════════════════ -->
+<div id="boot-screen">
+  <div class="boot-inner">
+    <pre id="boot-art" class="boot-art"></pre>
+    <div id="boot-log" class="boot-log"></div>
+    <div class="boot-bar-wrap">
+      <div id="boot-bar" class="boot-bar"></div>
+    </div>
+    <div id="boot-pct" class="boot-pct">0%</div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN SCREEN ══════════════════════════════════════════════════ -->
+<div id="login-screen" class="login-hidden">
+  <div class="login-bg"></div>
+  <div class="login-container">
+    <div class="login-header">
+      <pre class="login-art">
+ ██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗   ██╗██╗███████╗
+ ██║ ██╔╝██╔════╝██╔══██╗████╗  ██║██╔════╝██║   ██║██║╚══███╔╝
+ █████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║   ██║██║  ███╔╝ 
+ ██╔═██╗ ██╔══╝  ██╔══██╗██║╚██╗██║██╔══╝  ╚██╗ ██╔╝██║ ███╔╝  
+ ██║  ██╗███████╗██║  ██║██║ ╚████║███████╗ ╚████╔╝ ██║███████╗
+ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝  ╚═══╝  ╚═╝╚══════╝</pre>
+      <div class="login-subtitle">KernelViz OS 1.0 LTS — Linux Kernel Simulation</div>
+      <div class="login-info">MUET Jamshoro · CS-261 · 24CS005 · Kernel: 6.8.0-kviz</div>
+    </div>
+    <div class="login-box">
+      <div class="login-hostname">kernelviz-os tty1</div>
+      <div class="login-prompt-area">
+        <div class="login-msg" id="login-msg"></div>
+        <div class="login-field" id="login-user-field">
+          <label class="login-label">login: </label>
+          <input type="text" id="login-username" class="login-input" autocomplete="off" spellcheck="false" placeholder="username"/>
+        </div>
+        <div class="login-field login-hidden" id="login-pass-field">
+          <label class="login-label">Password: </label>
+          <input type="password" id="login-password" class="login-input" autocomplete="off" placeholder="password"/>
+        </div>
+        <button id="login-btn" class="login-btn login-hidden">Authenticate →</button>
+      </div>
+      <div class="login-accounts">
+        <div class="login-accounts-title">Available accounts:</div>
+        <div class="login-user-list">
+          <div class="login-user-card" data-user="root" data-pass="root">
+            <div class="luc-avatar root">⬡</div>
+            <div class="luc-info"><span class="luc-name">root</span><span class="luc-role">Superuser</span></div>
+          </div>
+          <div class="login-user-card" data-user="admin" data-pass="admin123">
+            <div class="luc-avatar admin">★</div>
+            <div class="luc-info"><span class="luc-name">admin</span><span class="luc-role">Administrator</span></div>
+          </div>
+          <div class="login-user-card" data-user="student" data-pass="muet2024">
+            <div class="luc-avatar student">◆</div>
+            <div class="luc-info"><span class="luc-name">student</span><span class="luc-role">Standard User</span></div>
+          </div>
+          <div class="login-user-card" data-user="guest" data-pass="">
+            <div class="luc-avatar guest">○</div>
+            <div class="luc-info"><span class="luc-name">guest</span><span class="luc-role">Guest (no pass)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="login-footer">
+      <span>KernelViz OS 1.0 LTS</span>
+      <span>Kernel 6.8.0-kviz-amd64</span>
+      <span id="login-clock">00:00:00</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN OS INTERFACE ════════════════════════════════════════════ -->
+<div id="os-shell" class="os-hidden">
+
+  <!-- ─── TASKBAR ──────────────────────────────────────────────────── -->
+  <div id="taskbar">
+    <div class="tb-left">
+      <span class="tb-logo">⬡ KernelViz OS</span>
+      <span class="tb-badge">24CS005</span>
+      <span class="tb-badge mode-badge" id="mode-badge">● DEMO</span>
+    </div>
+    <div class="tb-center">
+      <div class="tb-pill"><span class="tp-lbl">TICK</span><span class="tp-val" id="hdr-tick">0</span></div>
+      <div class="tb-pill"><span class="tp-lbl">CPU</span><span class="tp-val" id="hdr-cpu">0%</span></div>
+      <div class="tb-pill"><span class="tp-lbl">MEM</span><span class="tp-val" id="hdr-mem">0%</span></div>
+      <div class="tb-pill"><span class="tp-lbl">PROCS</span><span class="tp-val" id="hdr-procs">0</span></div>
+      <div class="tb-pill"><span class="tp-lbl">ALGO</span><span class="tp-val" id="hdr-algo">RR</span></div>
+    </div>
+    <div class="tb-right">
+      <span id="conn-indicator" class="conn-indicator disconnected">◉ OFFLINE</span>
+      <span class="tb-user" id="tb-user-display">⬡ root</span>
+      <button class="tb-logout-btn" id="tb-logout-btn" title="Logout">⏻</button>
+      <span id="live-clock" class="live-clock">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- ─── WINDOW BAR ─────────────────────────────────────────────── -->
+  <div id="window-bar">
+    <button class="win-tab active" data-win="dashboard" id="tab-dashboard">⬡ Dashboard</button>
+    <button class="win-tab" data-win="terminal"  id="tab-terminal">▶ Terminal</button>
+    <button class="win-tab" data-win="processes" id="tab-processes">☰ Processes</button>
+    <button class="win-tab" data-win="memory"    id="tab-memory">▦ Memory</button>
+    <button class="win-tab" data-win="scheduler" id="tab-scheduler">⏱ Scheduler</button>
+    <button class="win-tab" data-win="filesystem" id="tab-filesystem">📁 Filesystem</button>
+    <button class="win-tab" data-win="ipc"       id="tab-ipc">⇄ IPC</button>
+    <button class="win-tab" data-win="drivers"   id="tab-drivers">⚙ Drivers</button>
+    <button class="win-tab" data-win="security"  id="tab-security">🔒 Security</button>
+    <button class="win-tab" data-win="realstats" id="tab-realstats">◈ Real Stats</button>
+  </div>
+
+  <!-- ─── WINDOWS ───────────────────────────────────────────────── -->
+  <div id="windows-container">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="window active" id="win-dashboard">
+      <div class="dash-grid">
+
+        <!-- Row 1: Rings + History -->
+        <div class="dash-card" id="dc-cpu-ring">
+          <div class="dc-title">CPU UTILIZATION</div>
+          <div class="ring-wrap">
+            <canvas id="cpu-ring" width="150" height="150"></canvas>
+            <div class="ring-label"><span id="ring-cpu-val">0</span>%</div>
+          </div>
+          <div class="dc-sub" id="ring-algo-name">Round Robin</div>
+        </div>
+
+        <div class="dash-card" id="dc-mem-ring">
+          <div class="dc-title">MEMORY USAGE</div>
+          <div class="ring-wrap">
+            <canvas id="mem-ring" width="150" height="150"></canvas>
+            <div class="ring-label"><span id="ring-mem-val">0</span>%</div>
+          </div>
+          <div class="dc-sub"><span id="ring-mem-used">0</span> / <span id="ring-mem-total">1024</span> MB</div>
+        </div>
+
+        <div class="dash-card" id="dc-proc-states">
+          <div class="dc-title">PROCESS STATES</div>
+          <canvas id="state-chart" width="180" height="150"></canvas>
+          <div class="state-legend" id="state-legend"></div>
+        </div>
+
+        <div class="dash-card span2" id="dc-cpu-hist">
+          <div class="dc-title">CPU HISTORY (60s)</div>
+          <canvas id="cpu-history" class="spark-canvas"></canvas>
+        </div>
+
+        <!-- Row 2: Metrics -->
+        <div class="dash-card" id="dc-sched-metrics">
+          <div class="dc-title">SCHEDULER METRICS</div>
+          <div class="metrics-list">
+            <div class="ml-row"><span class="ml-k">Avg Wait</span><span class="ml-v" id="avg-wait">0.00</span></div>
+            <div class="ml-row"><span class="ml-k">Avg Turnaround</span><span class="ml-v" id="avg-ta">0.00</span></div>
+            <div class="ml-row"><span class="ml-k">Completed</span><span class="ml-v" id="completed-procs">0</span></div>
+            <div class="ml-row"><span class="ml-k">Algorithm</span><span class="ml-v" id="algo-display">RR</span></div>
+            <div class="ml-row"><span class="ml-k">Quantum</span><span class="ml-v" id="quantum-display">3</span></div>
+            <div class="ml-row"><span class="ml-k">Current PID</span><span class="ml-v" id="current-pid">-</span></div>
+          </div>
+        </div>
+
+        <div class="dash-card" id="dc-ipc-summary">
+          <div class="dc-title">IPC SUMMARY</div>
+          <div class="metrics-list">
+            <div class="ml-row"><span class="ml-k">Active Pipes</span><span class="ml-v" id="d-pipes">0</span></div>
+            <div class="ml-row"><span class="ml-k">Active Queues</span><span class="ml-v" id="d-queues">0</span></div>
+            <div class="ml-row"><span class="ml-k">Total Events</span><span class="ml-v" id="d-ipc-total">0</span></div>
+            <div class="ml-row"><span class="ml-k">Deadlock</span><span class="ml-v" id="d-deadlock" style="color:var(--green)">NONE</span></div>
+          </div>
+        </div>
+
+        <div class="dash-card span2" id="dc-sys-status">
+          <div class="dc-title">SYSTEM STATUS</div>
+          <div class="sys-status-grid">
+            <div class="ss-item"><div class="ss-lbl">TICK</div><div class="ss-val" id="d-tick">0</div></div>
+            <div class="ss-item"><div class="ss-lbl">PROCS</div><div class="ss-val" id="d-procs">0</div></div>
+            <div class="ss-item"><div class="ss-lbl">MEM BLOCKS</div><div class="ss-val" id="d-blocks">0</div></div>
+            <div class="ss-item"><div class="ss-lbl">FRAG</div><div class="ss-val" id="d-frag">0%</div></div>
+            <div class="ss-item"><div class="ss-lbl">UPTIME</div><div class="ss-val" id="d-uptime">0s</div></div>
+            <div class="ss-item accent"><div class="ss-lbl">REAL CPU</div><div class="ss-val" id="d-real-cpu">0%</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ TERMINAL ══ -->
+    <div class="window" id="win-terminal">
+      <div class="term-container">
+        <div class="term-titlebar">
+          <span class="term-dot red"></span>
+          <span class="term-dot yellow"></span>
+          <span class="term-dot green"></span>
+          <span class="term-title" id="term-title">root@kernelviz: /</span>
+          <span class="term-badge">bash — KernelViz OS 1.0</span>
+        </div>
+        <div id="term-output" class="term-output"></div>
+        <div class="term-input-row">
+          <span class="term-prompt" id="term-prompt">root@kernelviz:/# </span>
+          <input type="text" id="term-input" class="term-input" autocomplete="off" spellcheck="false"/>
+          <span class="term-cursor blink">█</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROCESSES ══ -->
+    <div class="window" id="win-processes">
+      <div class="panel-toolbar">
+        <h2 class="panel-title">⚙ PROCESS TABLE</h2>
+        <div class="toolbar-right">
+          <span class="proc-count-badge">Active: <span id="proc-count">0</span></span>
+          <button class="btn-primary" id="btn-add-proc">+ Spawn Process</button>
+        </div>
+      </div>
+
+      <div id="add-proc-form" class="spawn-form hidden">
+        <input type="text"   id="new-name"     placeholder="Name (e.g. worker)"  class="form-input"/>
+        <input type="number" id="new-burst"    placeholder="Burst (1-50)"        class="form-input" min="1" max="50"  value="5"/>
+        <input type="number" id="new-priority" placeholder="Priority (0-9)"      class="form-input" min="0" max="9"   value="5"/>
+        <input type="number" id="new-memory"   placeholder="Memory MB (1-512)"   class="form-input" min="1" max="512" value="32"/>
+        <button class="btn-success" id="btn-spawn-submit">SPAWN</button>
+        <button class="btn-danger"  id="btn-spawn-cancel">✕ Cancel</button>
+      </div>
+
+      <div class="proc-table-wrap">
+        <table class="proc-table">
+          <thead>
+            <tr>
+              <th>PID</th><th>NAME</th><th>STATE</th>
+              <th>PRIO</th><th>MEM</th><th>BURST</th><th>REM</th><th>WAIT</th><th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="proc-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="deadlock-alert" class="deadlock-alert hidden">
+        ⚠ DEADLOCK DETECTED — cycle in wait-for graph
+      </div>
+    </div>
+
+    <!-- ══ MEMORY ══ -->
+    <div class="window" id="win-memory">
+      <div class="panel-toolbar">
+        <h2 class="panel-title">▦ MEMORY MAP — 1024 MB · First-Fit Allocator</h2>
+      </div>
+      <div class="mem-layout">
+        <div class="mem-map-col">
+          <div class="mem-map-label">ADDRESS SPACE VISUALIZATION</div>
+          <div id="mem-map-visual" class="mem-map-visual"></div>
+          <div class="mem-map-legend">
+            <span><span class="leg-dot free"></span>Free</span>
+            <span><span class="leg-dot alloc"></span>Allocated</span>
+          </div>
+        </div>
+        <div class="mem-stats-col">
+          <div class="mem-stat-card">
+            <div class="msc-label">TOTAL RAM</div>
+            <div class="msc-val" id="mem-total">1024 MB</div>
+          </div>
+          <div class="mem-stat-card">
+            <div class="msc-label">USED</div>
+            <div class="msc-bar-wrap"><div id="mem-used-bar" class="msc-bar used-bar"></div></div>
+            <div class="msc-val" id="mem-used">0 MB</div>
+          </div>
+          <div class="mem-stat-card">
+            <div class="msc-label">FREE</div>
+            <div class="msc-bar-wrap"><div id="mem-free-bar" class="msc-bar free-bar"></div></div>
+            <div class="msc-val" id="mem-free">1024 MB</div>
+          </div>
+          <div class="mem-stat-card">
+            <div class="msc-label">FRAGMENTATION</div>
+            <div class="msc-bar-wrap"><div id="mem-frag-bar" class="msc-bar frag-bar"></div></div>
+            <div class="msc-val" id="mem-frag">0%</div>
+          </div>
+          <div class="mem-stat-card">
+            <div class="msc-label">BLOCKS</div>
+            <div class="msc-val" id="mem-blocks">0</div>
+          </div>
+          <div class="mem-allocator-note">
+            <strong>First-Fit Algorithm (CEP R3)</strong><br/>
+            Scans from start, allocates first sufficient block.
+            O(n) per allocation. Fragmentation accumulates over time.
+            Best-Fit and Worst-Fit variants are also simulated.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCHEDULER ══ -->
+    <div class="window" id="win-scheduler">
+      <div class="panel-toolbar">
+        <h2 class="panel-title">⏱ CPU SCHEDULER</h2>
+        <div class="sched-controls">
+          <button class="btn-primary" id="btn-toggle-algo">Switch: RR ↔ Priority</button>
+          <label class="ctrl-label">Quantum:
+            <input type="number" id="quantum-input" class="form-input sm" min="1" max="20" value="3"/>
+          </label>
+          <button class="btn-secondary" id="btn-set-quantum">Set</button>
+        </div>
+      </div>
+
+      <div class="gantt-wrap">
+        <div class="gantt-label">GANTT CHART — CPU Timeline</div>
+        <div id="gantt-scroll" class="gantt-scroll">
+          <canvas id="gantt-canvas" height="64"></canvas>
+        </div>
+      </div>
+
+      <div class="sched-metrics-grid">
+        <div class="smc-card"><div class="smc-lbl">AVG WAIT TIME</div><div class="smc-val" id="sm-avg-wait">0.00</div></div>
+        <div class="smc-card"><div class="smc-lbl">AVG TURNAROUND</div><div class="smc-val" id="sm-avg-ta">0.00</div></div>
+        <div class="smc-card accent"><div class="smc-lbl">CPU UTILIZATION</div><div class="smc-val" id="sm-cpu-util">0%</div></div>
+        <div class="smc-card"><div class="smc-lbl">ALGORITHM</div><div class="smc-val" id="sm-algo">Round Robin</div></div>
+        <div class="smc-card"><div class="smc-lbl">COMPLETED</div><div class="smc-val" id="sm-completed">0</div></div>
+        <div class="smc-card"><div class="smc-lbl">TOTAL TICKS</div><div class="smc-val" id="sm-ticks">0</div></div>
+      </div>
+
+      <div class="queue-section">
+        <div class="queue-label">READY QUEUE</div>
+        <div id="ready-queue" class="ready-queue"></div>
+      </div>
+    </div>
+
+    <!-- ══ FILESYSTEM ══ -->
+    <div class="window" id="win-filesystem">
+      <div class="panel-toolbar">
+        <h2 class="panel-title">📁 VIRTUAL FILESYSTEM — Hierarchical VFS (CEP R1)</h2>
+      </div>
+      <div class="fs-layout">
+        <div class="fs-tree-col">
+          <div class="fs-tree-label">DIRECTORY TREE</div>
+          <div id="fs-tree" class="fs-tree"></div>
+        </div>
+        <div class="fs-info-col">
+          <div class="fs-tree-label">INODE TABLE</div>
+          <div class="fs-inode-wrap">
+            <table class="fs-inode-table">
+              <thead><tr><th>ID</th><th>NAME</th><th>TYPE</th><th>SIZE</th><th>DEPTH</th><th>OWNER</th></tr></thead>
+              <tbody id="fs-inode-tbody"></tbody>
+            </table>
+          </div>
+          <div class="fs-note">
+            <strong>Hierarchical Filesystem (CEP R1)</strong><br/>
+            Supports directories, files, permissions, and inode-based tracking.
+            Integrated with process lifecycle — terminated processes release file handles.
+            Journal-based write tracking for crash recovery simulation.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ IPC ══ -->
+    <div class="window" id="win-ipc">
+      <div class="panel-toolbar">
+        <h2 class="panel-title">⇄ INTER-PROCESS COMMUNICATION (CEP R4)</h2>
+      </div>
+      <div class="ipc-layout">
+        <div class="ipc-log-col">
+          <div class="ipc-col-label">LIVE EVENT LOG</div>
+          <div id="ipc-log" class="ipc-log"></div>
+        </div>
+        <div class="ipc-stats-col">
+          <div class="ipc-col-label">IPC STATISTICS</div>
+          <div class="ipc-stats-grid">
+            <div class="ipc-stat"><div class="is-lbl">Active Pipes</div><div class="is-val" id="ipc-pipes">0</div></div>
+            <div class="ipc-stat"><div class="is-lbl">Active Queues</div><div class="is-val" id="ipc-queues">0</div></div>
+            <div class="ipc-stat"><div class="is-lbl">Total Events</div><div class="is-val" id="ipc-total">0</div></div>
+            <div class="ipc-stat"><div class="is-lbl">Deadlock</div><div class="is-val" id="ipc-deadlock" style="color:var(--green)">NONE</div></div>
+          </div>
+          <div class="ipc-diagram-label">IPC MECHANISM DIAGRAM</div>
+          <div class="ipc-diagram">
+            <div class="ipc-node">Process A</div>
+            <div class="ipc-arrows">
+              <div class="ipc-arrow-row">
+                <span class="ipc-arrow-lbl">PIPE →</span>
+                <div class="ipc-pipe-vis" id="pipe-vis">▶▶▶</div>
+              </div>
+              <div class="ipc-arrow-row">
+                <span class="ipc-arrow-lbl">← MQ</span>
+                <div class="ipc-mq-vis" id="mq-vis">[msg]</div>
+              </div>
+            </div>
+            <div class="ipc-node">Process B</div>
+          </div>
+          <div class="ipc-note">
+            <strong>Pipes</strong>: Unidirectional byte streams between writer/reader PIDs.<br/>
+            <strong>Message Queues</strong>: Structured message passing with sender PID tagging.<br/>
+            <strong>Deadlock Detection</strong>: Cycle detection in wait-for graph (CEP R9).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REAL STATS ══ -->
+    <div class="window" id="win-realstats">
+      <div class="panel-toolbar">
+        <h2 class="panel-title">◈ REAL SYSTEM STATS — Live via psutil (CEP R5)</h2>
+      </div>
+      <div class="real-grid">
+
+        <div class="real-card">
+          <div class="rc-title">CPU PER CORE</div>
+          <div id="cpu-cores" class="cpu-cores"></div>
+        </div>
+
+        <div class="real-card">
+          <div class="rc-title">REAL RAM USAGE</div>
+          <canvas id="real-ram-chart" width="260" height="150"></canvas>
+          <div class="ram-stats">
+            <span class="rs-item">Used: <strong id="rs-used">-</strong></span>
+            <span class="rs-item">Free: <strong id="rs-free">-</strong></span>
+            <span class="rs-item">Total: <strong id="rs-total">-</strong></span>
+          </div>
+        </div>
+
+        <div class="real-card tall">
+          <div class="rc-title">TOP PROCESSES (CPU%)</div>
+          <div id="top-proc-list" class="top-proc-list"></div>
+        </div>
+
+        <div class="real-card">
+          <div class="rc-title">SYSTEM METRICS</div>
+          <div class="metrics-list">
+            <div class="ml-row"><span class="ml-k">Context Switches</span><span class="ml-v" id="rs-ctx">-</span></div>
+            <div class="ml-row"><span class="ml-k">Disk Read</span><span class="ml-v" id="rs-disk-r">-</span></div>
+            <div class="ml-row"><span class="ml-k">Disk Write</span><span class="ml-v" id="rs-disk-w">-</span></div>
+            <div class="ml-row"><span class="ml-k">Net Sent</span><span class="ml-v" id="rs-net-s">-</span></div>
+            <div class="ml-row"><span class="ml-k">Net Recv</span><span class="ml-v" id="rs-net-r">-</span></div>
+            <div class="ml-row"><span class="ml-k">Load Avg (1/5/15m)</span><span class="ml-v" id="rs-load-avg">-</span></div>
+            <div class="ml-row"><span class="ml-k">Swap</span><span class="ml-v" id="rs-swap">-</span></div>
+          </div>
+        </div>
+
+
+        <div class="real-card" style="grid-column: 1 / -1;">
+          <div class="rc-title">DISK PARTITIONS (Real — from /proc/mounts)</div>
+          <div id="rs-disk-parts" style="margin-top:8px;min-height:40px;color:var(--text-dim);font-size:11px;">(connecting...)</div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ DEVICE DRIVERS ══ -->
+    <div class="window" id="win-drivers">
+      <div class="dc-title" style="margin-bottom:12px;">⚙ DEVICE DRIVERS &amp; IRQ TABLE</div>
+      <div class="drivers-grid">
+        <div class="driver-card">
+          <div class="driver-card-title">▸ Loaded Kernel Modules</div>
+          <div class="driver-list" id="driver-list">
+            <div class="driver-item"><div><div class="driver-name">GPU / Display (drm_kms_helper)</div><div class="driver-mod">Module: drm_kms_helper.ko</div></div><span class="driver-status ds-ok">LOADED</span></div>
+            <div class="driver-item"><div><div class="driver-name">Network Interface (e1000e)</div><div class="driver-mod">Module: e1000e.ko</div></div><span class="driver-status ds-ok">LOADED</span></div>
+            <div class="driver-item"><div><div class="driver-name">USB Controller (xhci_hcd)</div><div class="driver-mod">Module: xhci_hcd.ko</div></div><span class="driver-status ds-ok">LOADED</span></div>
+            <div class="driver-item"><div><div class="driver-name">SATA Storage (ahci)</div><div class="driver-mod">Module: ahci.ko</div></div><span class="driver-status ds-ok">LOADED</span></div>
+            <div class="driver-item"><div><div class="driver-name">Sound (snd_hda_intel)</div><div class="driver-mod">Module: snd_hda_intel.ko</div></div><span class="driver-status ds-load">LOADING</span></div>
+            <div class="driver-item"><div><div class="driver-name">Bluetooth (btusb)</div><div class="driver-mod">Module: btusb.ko</div></div><span class="driver-status ds-idle">IDLE</span></div>
+            <div class="driver-item"><div><div class="driver-name">Crypto (aesni_intel)</div><div class="driver-mod">Module: aesni_intel.ko</div></div><span class="driver-status ds-ok">LOADED</span></div>
+          </div>
+        </div>
+        <div class="driver-card">
+          <div class="driver-card-title">▸ IRQ Assignment Table</div>
+          <table class="irq-table">
+            <thead><tr><th>IRQ</th><th>Device</th><th>Type</th><th>Count</th></tr></thead>
+            <tbody id="irq-table-body">
+              <tr><td>0</td><td>timer</td><td>Edge</td><td id="irq-0">0</td></tr>
+              <tr><td>1</td><td>i8042 (keyboard)</td><td>Edge</td><td id="irq-1">0</td></tr>
+              <tr><td>8</td><td>rtc0</td><td>Edge</td><td id="irq-8">0</td></tr>
+              <tr><td>9</td><td>acpi</td><td>Fasteoi</td><td id="irq-9">0</td></tr>
+              <tr><td>16</td><td>e1000e (eth0)</td><td>Fasteoi</td><td id="irq-16">0</td></tr>
+              <tr><td>24</td><td>xhci_hcd (USB)</td><td>Fasteoi</td><td id="irq-24">0</td></tr>
+              <tr><td>28</td><td>ahci (SATA)</td><td>Fasteoi</td><td id="irq-28">0</td></tr>
+            </tbody>
+          </table>
+          <div class="driver-card-title" style="margin-top:16px;">▸ DMA Channels</div>
+          <table class="irq-table">
+            <thead><tr><th>Channel</th><th>Driver</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>0</td><td>cascade</td><td style="color:var(--accent)">OK</td></tr>
+              <tr><td>2</td><td>floppy</td><td style="color:var(--fg2)">UNUSED</td></tr>
+              <tr><td>4</td><td>cascade</td><td style="color:var(--accent)">OK</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SECURITY ══ -->
+    <div class="window" id="win-security">
+      <div class="dc-title" style="margin-bottom:12px;">🔒 SECURITY &amp; ACCESS CONTROL</div>
+      <div class="security-grid">
+        <div class="sec-card">
+          <div class="sec-card-title">👤 User Accounts</div>
+          <table class="sec-users-table">
+            <thead><tr><th>UID</th><th>Username</th><th>Role</th><th>Shell</th><th>Status</th></tr></thead>
+            <tbody id="sec-users-tbody">
+              <tr><td>0</td><td>root</td><td><span class="role-badge role-root">ROOT</span></td><td>/bin/bash</td><td style="color:var(--accent)">Active</td></tr>
+              <tr><td>1000</td><td>admin</td><td><span class="role-badge role-admin">ADMIN</span></td><td>/bin/bash</td><td style="color:var(--accent)">Active</td></tr>
+              <tr><td>1001</td><td>student</td><td><span class="role-badge role-user">USER</span></td><td>/bin/sh</td><td style="color:var(--fg)">Idle</td></tr>
+              <tr><td>65534</td><td>guest</td><td><span class="role-badge role-guest">GUEST</span></td><td>/sbin/nologin</td><td style="color:var(--fg2)">Restricted</td></tr>
+            </tbody>
+          </table>
+          <div class="sec-card-title" style="margin-top:14px;">🔑 Permissions (Current User: <span id="sec-current-user" style="color:var(--accent)">root</span>)</div>
+          <div class="sec-perms-grid" id="sec-perms-grid">
+            <div class="perm-item"><div class="perm-dot allowed"></div>Read /etc/shadow</div>
+            <div class="perm-item"><div class="perm-dot allowed"></div>Write to /root</div>
+            <div class="perm-item"><div class="perm-dot allowed"></div>kill any process</div>
+            <div class="perm-item"><div class="perm-dot allowed"></div>Mount filesystems</div>
+            <div class="perm-item"><div class="perm-dot allowed"></div>Load kernel modules</div>
+            <div class="perm-item"><div class="perm-dot allowed"></div>Network raw sockets</div>
+          </div>
+        </div>
+        <div class="sec-card">
+          <div class="sec-card-title">📋 Security Audit Log</div>
+          <div class="sec-log" id="sec-log"></div>
+          <div class="sec-card-title" style="margin-top:14px;">🔐 Encryption Status</div>
+          <div class="enc-status">
+            <div class="enc-row"><span>Disk Encryption</span><span class="enc-val">AES-256-XTS</span></div>
+            <div class="enc-row"><span>IPC Encryption</span><span class="enc-val">ChaCha20-Poly1305</span></div>
+            <div class="enc-row"><span>Kernel ASLR</span><span class="enc-val">ENABLED (4)</span></div>
+            <div class="enc-row"><span>Stack Canaries</span><span class="enc-val">ACTIVE</span></div>
+            <div class="enc-row"><span>SELinux</span><span class="enc-val warn">PERMISSIVE</span></div>
+            <div class="enc-row"><span>Seccomp</span><span class="enc-val">ENFORCING</span></div>
+            <div class="enc-row"><span>Login Attempts (session)</span><span class="enc-val" id="sec-login-attempts">0</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /windows-container -->
+
+</div><!-- /os-shell -->
+
+<script src="login.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
